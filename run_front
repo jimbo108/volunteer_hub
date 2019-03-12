@@ -1,0 +1,4 @@
+source ./backend/venv/bin/activate ;
+cd frontend ;
+npm run dev ; 
+

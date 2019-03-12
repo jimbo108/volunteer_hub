@@ -1,9 +1,9 @@
 from typing import Tuple
 import logging
 from contextlib import contextmanager
-from backend.data_model.data_model import User, Database
 from sqlalchemy.orm import sessionmaker
 import backend.api.errors as errors
+from backend.data_model.data_model import User, Database
 
 Session = sessionmaker(bind=Database.Engine)
 
@@ -30,20 +30,20 @@ def save_login(email: str, hashed_password: str) -> Tuple[int, str]:
 
 def _save_login_internal(email: str, hashed_password: str, session: Session) -> Tuple[int, str]:
     user_exists = _user_already_exists(email, session)
+
     if user_exists is None:
-        return (errors.FAILED_TO_QUERY_FOR_USER_CODE,
-                errors.FAILED_TO_QUERY_FOR_USER_STRING)
+        errors.log_error(errors.FAILED_TO_QUERY_FOR_USER_CODE) 
+        return errors.create_response(errors.FAILED_TO_QUERY_FOR_USER_CODE)
     elif user_exists:
-        return(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE,
-               errors.USER_WITH_EMAIL_ALREADY_EXISTS_STRING)
+        errors.log_error(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE)
+        return errors.create_response(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE)
 
     user = User(Email=email, PasswordHash=hashed_password)
     try:
         session.add(user)
     except BaseException as e:
-        logging.error(errors.FAILED_TO_COMMIT_USER_STRING + ': ' + str(e))
-        return (errors.FAILED_TO_COMMIT_USER_CODE,
-                errors.FAILED_TO_COMMIT_USER_STRING)
+        errors.log_error(errors.FAILED_TO_COMMIT_USER_CODE)
+        return errors.create_response(errors.FAILED_TO_COMMIT_USER_CODE)
 
     return None
 

@@ -35,7 +35,7 @@ class TestDBInterface(unittest.TestCase):
         users = self._get_users_with_email(email)
         self.assertEqual(len(users), 1)
 
-    def test___user_already_exists__no_user__return_false(self):
+    def test__user_already_exists__no_user__return_false(self):
         email = "testemail@email.com"
         hashed_pass = 'hash'
         exists = None
@@ -45,4 +45,16 @@ class TestDBInterface(unittest.TestCase):
         
         self.assertEqual(exists, False)
     
-    #def test___user
+    def test__user_already_exists__multiple_users__return_true(self):
+        email = "testemail@email.com"
+        hashed_pass = 'hash'
+        exists = None
+
+        db_interface.save_login(email, hashed_pass)
+        db_interface.save_login(email, hashed_pass)
+
+        with db_interface.session_scope() as session:
+            exists = db_interface._user_already_exists(email, session)
+
+        self.assertEqual(exists, True)
+    

@@ -22,14 +22,16 @@ def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, object], int]:
         return jsonify(err_response), 400
 
     err_response = db_int.save_login(user.email, user.hashed_password)
-    if err_response is not None:
+    if err_response['error_code'] == errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE:
+        return jsonify(err_response), 200
+    elif err_response is not None:
         return jsonify(err_response), 500
 
     success_response = _create_success_response()
     return jsonify(success_response), 200
 
 
-def _parse_and_validate_login(request: Dict[str, object]) -> Tuple[User, Dict[str, object]]:
+def _parse_and_validate_login(request: Dict[str, Any]) -> Tuple[User, Dict[str, object]]:
     email = request.get('email')
     password = request.get('password')
 
@@ -37,16 +39,10 @@ def _parse_and_validate_login(request: Dict[str, object]) -> Tuple[User, Dict[st
     password_valid = _validate_password(password)
 
     if not email_valid:
-        error_response = {'success': False,
-                          'error_code': errors.EMAIL_INVALID_CODE,
-                          'error_string': errors.EMAIL_INVALID_STRING}
-        return None, error_response
+        return None, errors.create_response(errors.EMAIL_INVALID_CODE)
 
     if not password_valid:
-        error_response = {'success': False,
-                          'error_code': errors.PASSWORD_INVALID_CODE,
-                          'error_string': errors.PASSWORD_INVALID_STRING}
-        return None, error_response
+        return None, errors.create_response(errors.PASSWORD_INVALID_CODE)
 
     user = User(email, password)
     return user, None

@@ -1,0 +1,5 @@
+*
+!.gitignore
+!api
+!test
+!data_model
