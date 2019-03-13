@@ -13,10 +13,10 @@ class User:
         self.hashed_password = self._hash_password(password)
 
     def _hash_password(self, password: str) -> None:
-        self.hashed_password = hashpw(password.encode(), secrets.SALT)
+        self.hashed_password = hashpw(password.encode(), secrets.SALT) # TODO: Make sure passwords are non null
 
 
-def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, object], int]:
+def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     user, err_response = _parse_and_validate_login(request)
     if err_response is not None:
         return jsonify(err_response), 400
