@@ -81,7 +81,9 @@ class User(Database.Base):
     Id = Column(Integer, primary_key=True)
     Email = Column(String, nullable=False)
     PasswordHash = Column(String, nullable=False)
-
+    FirstName = Column(String, nullable=True)
+    LastName = Column(String, nullable=False)
+    PhoneNumber = Column(String, nullable=False)
 
 class Organization(Database.Base):
     __tablename__ = "Organization"
