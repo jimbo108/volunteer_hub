@@ -3,11 +3,11 @@
 </template>
 
 <script>
-import HomeButtons from "./HomeButtons.vue"
+import HomeButtons from './HomeButtons.vue'
 
 export default {
-    components: {
-        HomeButtons
-    }
+  components: {
+    HomeButtons
+  }
 }
 </script>
