@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import database_exists
 
 
 PRODUCTION_NAME = "volunteer"
@@ -12,16 +13,30 @@ class Database:
 
     Engine = None
     Base = declarative_base()
-    Session = sessionmaker(bind=Database.Engine)
+    Session = None
 
     @staticmethod
     def create_database(name: Optional[str]=None) -> None:
-        if name is None:
-            Database.Engine = create_engine('sqlite:///' + PRODUCTION_NAME + '.db')
-        else:
-            Database.Engine = create_engine('sqlite:///' + name + '.db')
+        db_name = None
+        db_exists = False
 
+        if name is None:
+            db_name = 'sqlite:///' + PRODUCTION_NAME + '.db'
+        else:
+            db_name = 'sqlite:///' + name + '.db'
+
+        if database_exists(db_name):
+            db_exists = True
+
+        Database.Engine = create_engine(db_name)
         Database.Base.metadata.create_all(Database.Engine)
+        Database.Session = sessionmaker(bind=Database.Engine)
+
+        if not db_exists:
+            Database._initialize_org_types()
+
+    @staticmethod
+    def _initialize_types() -> None:
         Database._initialize_org_types()
         Database._initialize_visibility_types()
 
@@ -70,10 +85,6 @@ class Database:
     @staticmethod
     def _get_orm_classes() -> List[type]:
         raise NotImplementedError()
-
-
-Database.create_database()
-
 
 class User(Database.Base):
     __tablename__ = "User"
@@ -177,3 +188,5 @@ class Visibility(Database.Base):
 
     Id = Column(Integer, primary_key=True)
     Name = Column(String, nullable=False)
+
+Database.create_database()

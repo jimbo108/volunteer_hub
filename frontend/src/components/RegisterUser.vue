@@ -100,9 +100,9 @@ export default {
         .catch(this.handlePOSTError)
     },
     handleInvalidInput (validated) {
-      if (!emailValidated)  {
+      if (!validated.email) {
         this.validMessage = 'Not a valid email address'
-      } else if (!passwordValidated) {
+      } else if (!validated.password) {
         this.validMessage = 'Password must be nine or more characters'
       }
     },

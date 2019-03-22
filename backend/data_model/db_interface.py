@@ -33,17 +33,17 @@ def _save_login_internal(email: str, hashed_password: str, session: Session) -> 
 
     if user_exists is None:
         errors.log_error(errors.FAILED_TO_QUERY_FOR_USER_CODE) 
-        return errors.create_response(errors.FAILED_TO_QUERY_FOR_USER_CODE)
+        return errors.create_single_error_response(errors.FAILED_TO_QUERY_FOR_USER_CODE)
     elif user_exists:
         errors.log_error(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE)
-        return errors.create_response(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE)
+        return errors.create_single_error_response(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE)
 
     user = User(Email=email, PasswordHash=hashed_password)
     try:
         session.add(user)
     except BaseException as e:
         errors.log_error(errors.FAILED_TO_COMMIT_USER_CODE)
-        return errors.create_response(errors.FAILED_TO_COMMIT_USER_CODE)
+        return errors.create_single_error_response(errors.FAILED_TO_COMMIT_USER_CODE)
 
     return None
 
