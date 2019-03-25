@@ -76,11 +76,11 @@ class Database:
         OrganizationType.__table__.drop(Database.Engine)
         RewardTransaction.__table__.drop(Database.Engine)
         ActivityTransaction.__table__.drop(Database.Engine)
-        RefreshEvent.__tablename__.drop(Database.Engine)
-        Activity.__tablename__.drop(Database.Engine)
-        Reward.__tablename__.drop(Database.Engine)
-        OrganizationRegistrationRequest.__tablename__.drop(Database.Engine)
-        Visibility.__tablename__.drop(Database.Engine)
+        RefreshEvent.__table__.drop(Database.Engine)
+        Activity.__table__.drop(Database.Engine)
+        Reward.__table__.drop(Database.Engine)
+        OrganizationRegistrationRequest.__table__.drop(Database.Engine)
+        Visibility.__table__.drop(Database.Engine)
 
     @staticmethod
     def _get_orm_classes() -> List[type]:
@@ -90,11 +90,12 @@ class User(Database.Base):
     __tablename__ = "User"
 
     Id = Column(Integer, primary_key=True)
-    Email = Column(String, nullable=False)
+    Email = Column(String, nullable=False, index=True)
     PasswordHash = Column(String, nullable=False)
     FirstName = Column(String, nullable=True)
     LastName = Column(String, nullable=False)
     PhoneNumber = Column(String, nullable=False)
+
 
 class Organization(Database.Base):
     __tablename__ = "Organization"
@@ -175,8 +176,8 @@ class OrganizationRegistrationRequest(Database.Base):
     __tablename__ = "OrganizationRegistrationRequest"
 
     Id = Column(Integer, primary_key=True)
-    SubmittingUserId = Column(Integer, ForeignKey('User.Id'), nullable=False)
-    OrganizationName = Column(String, nullable=False)
+    SubmittingUserId = Column(Integer, ForeignKey('User.Id'), nullable=False, index=True)
+    OrganizationName = Column(String, nullable=False, index=True)
     Message = Column(String, nullable=False)
     ContactPhoneNumber = Column(String, nullable=False)
     ContactEmail = Column(String, nullable=False)

@@ -1,10 +1,10 @@
 import unittest
-from backend.test.api_test import TestSubmitLogin
+from backend.test.db_interface_test import TestDBInterfaceRegister
 
 
 def create_suite():
     test_suite = unittest.TestSuite()
-    test_suite.addTest(TestSubmitLogin())
+    test_suite.addTest(TestDBInterfaceRegister())
     return test_suite
 
 if __name__ == '__main__':

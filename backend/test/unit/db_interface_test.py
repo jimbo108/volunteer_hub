@@ -4,9 +4,11 @@ from backend.data_model.data_model import Database, User
 from sqlalchemy.orm import sessionmaker
 
 
-class TestDBInterface(unittest.TestCase):
+class TestDBInterfaceRegister(unittest.TestCase):
 
     TEST_DB = 'test'
+    def runTest(self):
+        pass
 
     def setUp(self):
         Database.create_database(self.TEST_DB)

@@ -4,7 +4,7 @@ from backend.data_model.data_model import Database, User
 from sqlalchemy.orm import sessionmaker
 
 
-class TestDBInterface(unittest.TestCase):
+class TestDBInterfaceRegister(unittest.TestCase):
 
     TEST_DB = 'test'
 
@@ -44,3 +44,4 @@ class TestDBInterface(unittest.TestCase):
             exists = db_interface._user_already_exists(email, session)
 
         self.assertEqual(exists, False)
+
