@@ -14,7 +14,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 logging.basicConfig(filename='logfile', level=logging.DEBUG)
 
 
-@app.route('/api/random')
+@app.route('/random', methods=['GET'])
 def random_number():
     response = {
         'randomNumber': randint(1, 100)
@@ -22,7 +22,7 @@ def random_number():
     return jsonify(response)
 
 
-@app.route('/api/submit_login', methods=['POST'])
+@app.route('/register-user', methods=['POST'])
 def submit_login():
     json_request = request.get_json()
     return api.submit_login(json_request)

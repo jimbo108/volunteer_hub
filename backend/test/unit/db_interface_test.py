@@ -7,8 +7,6 @@ from sqlalchemy.orm import sessionmaker
 class TestDBInterfaceRegister(unittest.TestCase):
 
     TEST_DB = 'test'
-    def runTest(self):
-        pass
 
     def setUp(self):
         Database.create_database(self.TEST_DB)
@@ -60,3 +58,5 @@ class TestDBInterfaceRegister(unittest.TestCase):
 
         self.assertEqual(exists, True)
     
+if __name__ == '__main__':
+    unittest.main()

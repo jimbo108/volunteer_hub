@@ -1,47 +1,91 @@
-import unittest
-import backend.data_model.db_interface as db_interface
-from backend.data_model.data_model import Database, User
-from sqlalchemy.orm import sessionmaker
+from unittest.mock import patch
+from unittest import TestCase, main
+import flask
+from app import app
+import backend.api.api as api
+import backend.api.errors as errors
+from backend.data_model.data_model import User
 
 
-class TestDBInterfaceRegister(unittest.TestCase):
+class TestApiRegisterUser(TestCase):
 
-    TEST_DB = 'test'
+    '''
+    mg_[class variable] = mock_global
+    gs_[func] = global_setter
+    m_[param] = mocked
 
+    '''
+    mg__parse_and_validate_login__valid_user = None
+    mg__parse_and_validate_login__codes = None
+
+    '''
+    You need an app_context even when jsonify is mocked.  
+    https://stackoverflow.com/questions/24877025/runtimeerror-working-outside-of-application-context-when-unit-testing-with-py
+    '''
     def setUp(self):
-        Database.create_database(self.TEST_DB)
-        db_interface.Session = sessionmaker(bind=Database.Engine)
-        # TODO: Think of a better paradigm for testing
+        self.app_context = app.app_context()
+        self.app_context.push()
 
     def tearDown(self):
-        Database.drop_all_test_database(self.TEST_DB)
-    
-    def _get_users_with_email(self, email):
-        with db_interface.session_scope() as session:
-            query = session.query(User).filter_by(Email=email)
-            users = query.all()
-            return users
+        self.app_context.pop()
 
-    def _insert_user_with_email(self, email, hash):
-        with db_interface.session_scope() as session:
-            user = User(Email=email, PasswordHash=hash)
-            session.add(user)
+    @patch('flask.jsonify')
+    @patch('backend.data_model.db_interface.save_login')
+    @patch('backend.api.api._parse_and_validate_login')
+    def test__submit_login__req_none__return_code_and_400(self, m_parse_and_validate_login,
+                                                          m_save_login, m_jsonify):
+        m_parse_and_validate_login.side_effect = self.mock__parse_and_validate_login
+        # BOOKMARK: For some reason jsonify is still being called
+        m_jsonify.side_effect = self.mock__jsonify
 
-    def test__save_login__insert_user__user_exists(self):
-        email = "testemail@email.com"
-        hashed_pass = 'hash'
-        db_interface.save_login(email, hashed_pass)
+        self.mg__parse_and_validate_login__valid_user = True
 
-        users = self._get_users_with_email(email)
-        self.assertEqual(len(users), 1)
+        resp, http_code = api.submit_login(None)
 
-    def test___user_already_exists__no_user__return_false(self):
-        email = "testemail@email.com"
-        hashed_pass = 'hash'
-        exists = None
+        self.assertFalse(self.is_success_response(resp))
 
-        with db_interface.session_scope() as session:
-            exists = db_interface._user_already_exists(email, session)
+        expected_codes = set([errors.REQUEST_INVALID_CODE])
+        self.assertTrue(self.contains_only_error_codes(resp, expected_codes))
+        self.assertEqual(http_code, 400)
 
-        self.assertEqual(exists, False)
+    def is_success_response(self, resp):
+        return resp['success'] and 'errors' not in resp
 
+    def contains_only_error_codes(self, json, expected_codes_set):
+        errors = json.get('errors')
+        if errors is None:
+            return False
+
+        found_codes_set = set()
+        for error in errors:
+            error = error.get('error')
+            if error is None:
+                continue
+            error_code = error.get('error_code')
+            if error_code is None:
+                continue
+            found_codes_set.add(error_code)
+
+        symmetric_difference = found_codes_set.symmetric_difference(expected_codes_set)
+        return len(symmetric_difference) == 0
+
+    def mock__parse_and_validate_login(self, request):
+        if self.mg__parse_and_validate_login__valid_user is None:
+            raise ValueError('mg__parse_and_validate_login__valid_user not set explicitly')
+
+        if self.mg__parse_and_validate_login__valid_user:
+            user = User(Email='test@test.com', PasswordHash='asdf',
+                        FirstName='first', LastName='last',
+                        PhoneNumber='111-111-1111')
+            return user, None
+        else:
+            return None, self.mg__parse_and_validate_login__codes
+
+    def mock__jsonify(self, dic):
+        return dic
+
+    def gs_set_codes(self, codes):
+        self.mg__parse_and_validate_login__codes = codes
+
+if __name__ == '__main__':
+    main()

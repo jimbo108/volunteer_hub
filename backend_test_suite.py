@@ -5,6 +5,7 @@ from backend.test.db_interface_test import TestDBInterfaceRegister
 def create_suite():
     test_suite = unittest.TestSuite()
     test_suite.addTest(TestDBInterfaceRegister())
+    test_suite.addTest(
     return test_suite
 
 if __name__ == '__main__':

@@ -17,6 +17,10 @@ from backend.data_model.data_model import User, OrganizationRegistrationRequest
 def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     error_list = None
 
+    if request is None:
+        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
+        return jsonify(error_list.to_response_dict()), 400
+
     user, error_codes = _parse_and_validate_login(request)
     if error_codes is not None:
         error_list = errors.create_multiple_error_response(error_codes)
@@ -26,9 +30,9 @@ def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     if error_code is not None:
         error_list = errors.create_single_error_response(error_code)
 
-    if error_list.contains_error(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE):
-        return jsonify(error_list.to_response_dict()), 200
-    elif error_list is not None:
+        if error_list.contains_error(errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE):
+            return jsonify(error_list.to_response_dict()), 200
+
         return jsonify(error_list.to_response_dict()), 500
 
     success_response = _create_success_response()
@@ -64,7 +68,7 @@ def _parse_and_validate_login(request: Dict[str, Any]) -> Tuple[User, List[str]]
     if len(error_codes) > 0:
         return None, errors.create_multiple_error_response(error_codes)
 
-    user = _create_user(email, password)
+    user = _create_user(email, password, last_name, phone_number, first_name)
     return user, None
 
 

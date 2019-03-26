@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Any
 import logging
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
@@ -71,13 +71,13 @@ def _user_already_exists(email: str, session: Session) -> bool:
     else:
         return False
 
-
+'''
 def _get_user_with_email(email: str) -> User:
     with session_scope as session:
         try:
             query = session.query(User).filter_by(Email=email)
             existing_users = query.all()
-
+'''
 '''
 ===================================================================================
 ==============================REGISTER ORGANIZATION================================
@@ -142,3 +142,13 @@ def _org_exists(organization_name: str, session: Session) -> bool:
         return True
 
     return False
+
+'''
+===================================================================================
+====================================SHARED=========================================
+===================================================================================
+'''
+
+
+def set_database(engine: Any) -> None:
+    Session = sessionmaker(bind=engine)

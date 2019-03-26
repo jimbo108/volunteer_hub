@@ -86,6 +86,7 @@ class Database:
     def _get_orm_classes() -> List[type]:
         raise NotImplementedError()
 
+
 class User(Database.Base):
     __tablename__ = "User"
 
