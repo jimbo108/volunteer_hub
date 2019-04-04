@@ -78,31 +78,6 @@ def _create_user(email: str, password: str, last_name: str, phone_number: str, f
                 PhoneNumber=phone_number)
 
 
-def _validate_email(email: str) -> bool:
-    if email is None or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-        return False
-    return True
-
-
-def _validate_password(password: str) -> bool:
-    if len(password) < 6:
-        return False
-    return True
-
-
-def _validate_name(first_name: str, last_name: str) -> bool:
-    return last_name is not None and len(last_name) > 0
-
-
-def _validate_phone_number(phone_number: str) -> bool:
-    if phone_number is None:
-        return False
-    phone_number = phone_number.strip()
-    if _phone_number_regex(phone_number):
-        return True
-    return False
-
-
 def _phone_number_regex(phone_number: str) -> bool:
     if re.match(r"\A\d{3}-\d{3}-\d{4}\Z", phone_number):
         return True
@@ -138,18 +113,23 @@ def _clean_phone_number(phone_number: str):
 def submit_organization_request(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     error_list = None
 
-    org_request, err_response = _parse_and_validate_org_request(request)
-    if err_response is not None:
-        return jsonify(err_response), 400
+    if request is None:
+        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
+        return jsonify(error_list.to_response_dict()), 400
+
+    org_request, error_codes = _parse_and_validate_org_request(request)
+    if error_codes is not None:
+        error_list = errors.create_multiple_error_response(error_codes)
+        return jsonify(error_list.to_response_dict()), 400
 
     error_code = db_int.save_org_request(org_request)
 
     if error_code is not None:
         error_list = errors.create_single_error_response(error_code)
-    if error_list.contains_error(errors.ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_CODE):
-        return jsonify(error_list.to_response_dict()), 200
-    elif error_list is not None:
-        return jsonify(error_list.to_response_dict()), 500
+        if error_list.contains_error(errors.ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_CODE):
+            return jsonify(error_list.to_response_dict()), 200
+        else:
+            return jsonify(error_list.to_response_dict()), 500
 
     success_response = _create_success_response()
     return jsonify(success_response), 200
@@ -207,6 +187,16 @@ def _create_org_request(org_name: str, message: str, phone_number: str,
                                            OrganizationURL=org_url)
 
 
+def _validate_password(password: str) -> bool:
+    if len(password) < 6:
+        return False
+    return True
+
+
+def _validate_name(first_name: str, last_name: str) -> bool:
+    return last_name is not None and len(last_name) > 0
+
+
 def _get_phone_number(phone_number: str) -> str:
     raise NotImplementedError()
 
@@ -235,3 +225,19 @@ def _create_success_response():
 
 def hash_password(password: str) -> None:
     return hashpw(password.encode(), secrets.SALT)  # TODO: Make sure passwords are non null
+
+
+def _validate_email(email: str) -> bool:
+    if email is None or not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        return False
+    return True
+
+
+def _validate_phone_number(phone_number: str) -> bool:
+    if phone_number is None:
+        return False
+    phone_number = phone_number.strip()
+    if _phone_number_regex(phone_number):
+        return True
+    return False
+

@@ -31,6 +31,7 @@ FAILED_TO_QUERY_FOR_ORG_STRING = "Failed to query database for organization or o
 _error_dict[FAILED_TO_COMMIT_USER_CODE] = FAILED_TO_COMMIT_USER_STRING
 _error_dict[FAILED_TO_QUERY_FOR_USER_CODE] = FAILED_TO_QUERY_FOR_USER_STRING
 _error_dict[FAILED_TO_QUERY_FOR_ORG_CODE] = FAILED_TO_QUERY_FOR_ORG_STRING
+_error_dict[FAILED_TO_COMMIT_ORG_REQUEST_CODE] = FAILED_TO_COMMIT_ORG_REQUEST_STRING
 
 USER_WITH_EMAIL_ALREADY_EXISTS_CODE = 301
 USER_WITH_EMAIL_ALREADY_EXISTS_STRING = "User with that email already exists"
@@ -38,6 +39,7 @@ ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_CODE = 302
 ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_STRING = "Organization with that name already exists or is being requested."
 
 _error_dict[USER_WITH_EMAIL_ALREADY_EXISTS_CODE] = USER_WITH_EMAIL_ALREADY_EXISTS_STRING
+_error_dict[ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_CODE] = ORG_OR_ORG_REQUEST_WITH_NAME_ALREADY_EXISTS_STRING
 
 
 def create_single_error_response(code: int) -> Dict[str, Dict[str, Union[bool, int, str]]]:
@@ -140,7 +142,7 @@ class ErrorList:
 
     def add_error(self, error: ErrorObject) -> None:
         self.errors.append(error)
+        self._error_set.add(error.error_code)
 
     def contains_error(self, error_code: int) -> bool:
         return (error_code in self._error_set)
-

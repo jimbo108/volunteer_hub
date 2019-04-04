@@ -6,6 +6,7 @@ import unittest
 from backend.data_model.data_model import Database
 from backend.data_model.db_interface import set_database, session_scope, _user_already_exists
 import backend.api.errors as errors
+from backend.test.test_helper import get_valid_register_user_dict
 
 
 class FlaskTestCase(unittest.TestCase):
@@ -26,7 +27,7 @@ class FlaskTestCase(unittest.TestCase):
         self.assertTrue(type(ret.json["randomNumber"]) == int)
 
     def test__register_user__valid_input__user_created(self):
-        test_dict = self.get_valid_register_user_dict()
+        test_dict = get_valid_register_user_dict()
 
         ret = self.post_with_user_dict(test_dict)
         self.assertTrue(ret.json.get('success'))
@@ -36,7 +37,7 @@ class FlaskTestCase(unittest.TestCase):
             self.assertTrue(_user_already_exists(test_dict['email'], session))
 
     def test__register_user__invalid_email_and_phone_number__return_codes_no_user_created(self):
-        valid_dict = self.get_valid_register_user_dict()
+        valid_dict = get_valid_register_user_dict()
         invalid_phone_and_email_dict = {
             'email': 'test_test.com',
             'phone_number': '555-555-555'
@@ -52,7 +53,7 @@ class FlaskTestCase(unittest.TestCase):
             self.assertFalse(_user_already_exists(test_dict['email'], session))
 
     def test__register_user__invalid_password_and_last_name__return_codes_no_user_created(self):
-        valid_dict = self.get_valid_register_user_dict()
+        valid_dict = get_valid_register_user_dict()
         invalid_password_and_last_name_dict = {
             'password': 'fivec',
             'last_name': ''
@@ -69,7 +70,7 @@ class FlaskTestCase(unittest.TestCase):
             self.assertFalse(_user_already_exists(test_dict['email'], session))
 
     def test__register_user__no_first_name__user_created(self):
-        valid_dict = self.get_valid_register_user_dict()
+        valid_dict = get_valid_register_user_dict()
         no_first_name_dict = {
             'first_name': ''
         }
@@ -81,15 +82,6 @@ class FlaskTestCase(unittest.TestCase):
 
         with session_scope() as session:
             self.assertAlmostEqualstTrue(_user_already_exists(test_dict['email']))
-
-    def get_valid_register_user_dict(self):
-        return dict(
-            email='test@test.com',
-            password='password',
-            first_name='jimbo',
-            last_name='testmann',
-            phone_number='111-111-1111'
-        )
 
     def post_with_user_dict(self, user_dict):
         return self.app.post('/register-user', json=user_dict, follow_redirects=True)
