@@ -1,0 +1,33 @@
+Grab bag TODOs:
+(1) Change DB to postgresql from sqlite
+(2) Add support for JWT in register user / for the rest of everything
+(3) login backend / frontend
+(4) Finish register org frontend
+(5) Actual transaction workflows
+(6) Point assignment
+(7) User and org stats  
+(8) Approve-orgs workflow
+(9) Find participating orgs near me
+(10) Mobile
+
+Transaction workflows:
+   (1) Point dissemination
+        (a) User hits "Claim Points" link / button
+	(b) User gets a 6 digit number and a countdown timer 
+	(c) User hands their device or reads out the number to someone at a terminal
+	(d) Page on user device automatically reloads and notes the number of points added to their account
+	
+	Future state:
+	    (1) Some sort of QR code or image recognition for something closer to a "scan"
+	    (2) Remove / dispute transactions functionality
+
+    (2) Point consumption
+	(a) Uesr hits the "User Points" link / button
+	(b) User gets a 6 digit number and a countdown timer
+	(c) User hands their device or reads out the number at a terminal
+	(d) Page on user device automatically reloads and notes the number of points removed from their account
+	
+	Future state:
+	    (*) Same as (1) Point dissemination
+
+	 

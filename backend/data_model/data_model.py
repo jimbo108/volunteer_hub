@@ -19,7 +19,7 @@ class Database:
     def create_database(name: Optional[str]=None) -> None:
         db_name = None
         db_exists = False
-
+        # postgresql://localhost/mydb
         if name is None:
             db_name = 'sqlite:///' + PRODUCTION_NAME + '.db'
         else:
