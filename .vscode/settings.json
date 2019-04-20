@@ -1,5 +1,12 @@
 {
     "python.linting.pylintEnabled": false,
-    "python.linting.pep8Enabled": true,
-    "python.linting.enabled": true
+    "python.linting.pep8Enabled": false,
+    "python.linting.enabled": true,
+    "python.linting.pep8Args": ["--max-line-length=120"],
+    "python.pythonPath": "env/bin/python3",
+    "vim.handleKeys": {
+        "<C-b": false
+    },
+    "python.linting.flake8Enabled": true,
+    
 }

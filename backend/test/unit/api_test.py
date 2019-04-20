@@ -68,7 +68,7 @@ class TestApiRegisterUser(TestCase):
 
         self.mg__parse_and_validate_login__valid_user = True
 
-        resp, http_code = api.submit_login(None)
+        resp, http_code = api.register_user(None)
 
         self.assertFalse(self.is_success_response(resp))
 
@@ -87,7 +87,7 @@ class TestApiRegisterUser(TestCase):
         self.mg__parse_and_validate_login__valid_user = False
         self.mg__parse_and_validate_login__codes = [errors.PASSWORD_INVALID_CODE, errors.EMAIL_INVALID_CODE]
 
-        resp, http_code = api.submit_login({"not_none": 1})
+        resp, http_code = api.register_user({"not_none": 1})
 
         self.assertFalse(self.is_success_response(resp))
 
@@ -108,7 +108,7 @@ class TestApiRegisterUser(TestCase):
         self.mg__save_login__successful_save = False
         self.mg__save_login__code = errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE
 
-        resp, http_code = api.submit_login({"not_none": 1})
+        resp, http_code = api.register_user({"not_none": 1})
 
         self.assertFalse(self.is_success_response(resp))
 
@@ -129,7 +129,7 @@ class TestApiRegisterUser(TestCase):
         self.mg__save_login__successful_save = False
         self.mg__save_login__code = errors.FAILED_TO_COMMIT_USER_CODE
 
-        resp, http_code = api.submit_login({"not_none": 1})
+        resp, http_code = api.register_user({"not_none": 1})
 
         self.assertFalse(self.is_success_response(resp))
 
@@ -149,7 +149,7 @@ class TestApiRegisterUser(TestCase):
         self.mg__parse_and_validate_login__valid_user = True
         self.mg__save_login__successful_save = True
 
-        resp, http_code = api.submit_login({"not_none": 1})
+        resp, http_code = api.register_user({"not_none": 1})
 
         self.assertTrue(self.is_success_response(resp))
 

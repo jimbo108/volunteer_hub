@@ -2,10 +2,49 @@ import re
 from typing import Tuple, Dict, Any, List
 from flask import jsonify
 from bcrypt import hashpw
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
 import backend.api.errors as errors
 import backend.data_model.db_interface as db_int
 import backend.api.secrets as secrets
 from backend.data_model.data_model import User, OrganizationRegistrationRequest
+
+
+'''
+===================================================================================
+================================LOGIN USER=========================================
+===================================================================================
+'''
+
+# BOOKMARK
+
+
+def login_user(request: Dict[str, Any]) -> TuplepDict[str, Any], int]:
+    error_list = None
+
+    if request is None:
+        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
+        return jsonify(error_list.to_response_dict()), 400
+
+    user, error_codes = _parse_and_validate_login(request, False)
+    if error_codes is not None:
+        error_list = errors.create_multiple_error_response(error_codes)
+        return jsonify(error_list.to_response_dict()), 400
+
+    valid_username, error_code = db_int.check_login(user)
+    if error_code is not None:
+        error_list = errors.create_multiple_error_response(error_codes)
+        return jsonify(error_list.to_response_dict()), 500
+
+    if not valid_username:
+        error_code = errors.LOGIN_INVALID_CODE
+        return jsonify(errors.create_single_error_response(error_code).to_response_dict())
+
+    else:
+        access_token = create_access_token(identity=user.Email)
+        return jsonify(_create_success_response(access_token))
 
 '''
 ===================================================================================
@@ -13,15 +52,14 @@ from backend.data_model.data_model import User, OrganizationRegistrationRequest
 ===================================================================================
 '''
 
-
-def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
+def register_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     error_list = None
 
     if request is None:
         error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
         return jsonify(error_list.to_response_dict()), 400
 
-    user, error_codes = _parse_and_validate_login(request)
+    user, error_codes = _parse_and_validate_login(request, True)
     if error_codes is not None:
         error_list = errors.create_multiple_error_response(error_codes)
         return jsonify(error_list.to_response_dict()), 400
@@ -39,19 +77,14 @@ def submit_login(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     return jsonify(success_response), 200
 
 
-def _parse_and_validate_login(request: Dict[str, Any]) -> Tuple[User, List[str]]:
+def _parse_and_validate_login(request: Dict[str, Any], is_register: bool) -> Tuple[User, List[str]]:
     error_codes = []
 
     email = request.get('email')
     password = request.get('password')
-    first_name = request.get('first_name')
-    last_name = request.get('last_name')
-    phone_number = request.get('phone_number')
 
     email_valid = _validate_email(email)
     password_valid = _validate_password(password)
-    name_valid = _validate_name(first_name, last_name)
-    phone_number_valid = _validate_phone_number(phone_number)
 
     if not email_valid:
         error_codes.append(errors.EMAIL_INVALID_CODE)
@@ -59,11 +92,20 @@ def _parse_and_validate_login(request: Dict[str, Any]) -> Tuple[User, List[str]]
     if not password_valid:
         error_codes.append(errors.PASSWORD_INVALID_CODE)
 
-    if not name_valid:
-        error_codes.append(errors.NAME_INVALID_CODE)
+    if is_register:
+        first_name = request.get('first_name')
+        last_name = request.get('last_name')
+        phone_number = request.get('phone_number')
 
-    if not phone_number_valid:
-        error_codes.append(errors.PHONE_NUMBER_INVALID_CODE)
+        name_valid = _validate_name(first_name, last_name)
+        phone_number_valid = _validate_phone_number(phone_number)
+
+        if not name_valid:
+            error_codes.append(errors.NAME_INVALID_CODE)
+
+        if not phone_number_valid:
+            error_codes.append(errors.PHONE_NUMBER_INVALID_CODE)
+
 
     if len(error_codes) > 0:
         return None, errors.create_multiple_error_response(error_codes)
@@ -74,8 +116,7 @@ def _parse_and_validate_login(request: Dict[str, Any]) -> Tuple[User, List[str]]
 
 def _create_user(email: str, password: str, last_name: str, phone_number: str, first_name: str=None) -> User:
     hashed_pass = hash_password(password)
-    return User(Email=email, PasswordHash=hashed_pass, FirstName=first_name, LastName=last_name,
-                PhoneNumber=phone_number)
+    return User(Email=email, PasswordHash=hashed_pass, FirstName=first_name, LastName=last_name, PhoneNumber=phone_number)
 
 
 def _phone_number_regex(phone_number: str) -> bool:
@@ -219,8 +260,14 @@ def _validate_org_url(org_url: str) -> bool:
 '''
 
 
-def _create_success_response():
-    return {'success': True}
+def _create_success_response(access_token: str=None) -> Dict[str, Any]:
+    if access_token is not None:
+        return {
+            'success': True,
+            'access_token': access_token
+        }
+    else:
+        return {'success': True}
 
 
 def hash_password(password: str) -> None:

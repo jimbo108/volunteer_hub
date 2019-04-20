@@ -1,1 +1,2 @@
 SALT = b'$2b$12$tcdsC3duN2EvaupP0pdePO'
+JWT_KEY = b'8d4f4bce25c4565d853fa57fc27918c6397a8bee5303f042'

@@ -1,0 +1,10 @@
+Go simple:
+Return an access token and a refresh token on login
+
+Give a refresh endpoint
+
+Have the frontend store the both tokens in Vuex
+
+Have the frotend automatically refresh when the appropriate error is used
+
+Require access tokens in relevant resources
