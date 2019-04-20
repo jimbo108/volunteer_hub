@@ -2,10 +2,6 @@ from random import randint
 import logging
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
-    get_jwt_identity
-)
 import backend.data_model.db_interface as db_int
 import backend.api.api as api
 import backend.api.secrets as secrets
