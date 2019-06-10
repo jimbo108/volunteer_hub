@@ -2,7 +2,7 @@ import re
 from typing import Tuple, Dict, Any, List, Union
 from flask import jsonify
 from bcrypt import hashpw
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, create_refresh_token, JWTManager
 import backend.api.errors as errors
 import backend.data_model.db_interface as db_int
 import backend.api.secrets as secrets
@@ -14,7 +14,6 @@ from backend.data_model.data_model import User, OrganizationRegistrationRequest
 ================================LOGIN USER=========================================
 ===================================================================================
 '''
-
 
 def login_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     if request is None:
@@ -32,7 +31,8 @@ def login_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
         return _error_response(errors.LOGIN_INVALID_CODE, 422)
     else:
         access_token = create_access_token(identity=user.Email)
-        return _success_response(access_token)
+        refresh_token = create_refresh_token(identity=user.Email)
+        return _success_response(access_token, refresh_token)
 
 
 '''
@@ -52,6 +52,7 @@ def register_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     if error_codes is not None:
         return _error_response(error_codes, 400)
 
+    identity_email = user.Email
     error_code = db_int.save_login(user)
     if error_code is not None:
         error_list = errors.create_single_error_response(error_code)
@@ -60,8 +61,10 @@ def register_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
             return jsonify(error_list.to_response_dict()), 200
 
         return jsonify(error_list.to_response_dict()), 500
-    return _success_response()
 
+    access_token = create_access_token(identity=identity_email)
+    refresh_token = create_refresh_token(identity=identity_email)
+    return _success_response(access_token, refresh_token)
 
 
 def _create_user(email: str, password: str, last_name: str, phone_number: str, first_name: str = None) -> User:
@@ -209,18 +212,17 @@ def _validate_org_url(org_url: str) -> bool:
 '''
 
 
-def _create_success_response(access_token: str = None) -> Dict[str, Any]:
+def _create_success_response(access_token: str = None, refresh_token: str = None) -> Dict[str, Any]:
+    return_dict = {'success': True}
     if access_token is not None:
-        return {
-            'success': True,
-            'access_token': access_token
-        }
-    else:
-        return {'success': True}
+        return_dict['access_token'] = access_token
+    if refresh_token is not None:
+        return_dict['refresh_token'] = refresh_token
+    return return_dict
 
 
-def _success_response(access_token: str = None, http_code: int = 200) -> Dict[str, Any]:
-    return jsonify(_create_success_response(access_token)), http_code
+def _success_response(access_token: str = None, refresh_token: str = None, http_code: int = 200) -> Dict[str, Any]:
+    return jsonify(_create_success_response(access_token, refresh_token)), http_code
 
 
 def _error_response(error_codes: Union[int, List[int]], http_code: int) -> Dict[str, Any]:
@@ -283,4 +285,3 @@ def _parse_and_validate_login(request: Dict[str, Any], is_register: bool) -> Tup
 
     user = _create_user(email, password, last_name, phone_number, first_name)
     return user, None
-
