@@ -1,11 +1,8 @@
 import re
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Union
 from flask import jsonify
 from bcrypt import hashpw
-from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
-    get_jwt_identity
-)
+from flask_jwt_extended import create_access_token
 import backend.api.errors as errors
 import backend.data_model.db_interface as db_int
 import backend.api.secrets as secrets
@@ -18,52 +15,42 @@ from backend.data_model.data_model import User, OrganizationRegistrationRequest
 ===================================================================================
 '''
 
-# BOOKMARK
 
-
-def login_user(request: Dict[str, Any]) -> TuplepDict[str, Any], int]:
-    error_list = None
-
+def login_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     if request is None:
-        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(errors.REQUEST_INVALID_CODE, 400)
 
     user, error_codes = _parse_and_validate_login(request, False)
     if error_codes is not None:
-        error_list = errors.create_multiple_error_response(error_codes)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(error_codes, 400)
 
     valid_username, error_code = db_int.check_login(user)
     if error_code is not None:
-        error_list = errors.create_multiple_error_response(error_codes)
-        return jsonify(error_list.to_response_dict()), 500
+        return _error_response(error_code, 500)
 
     if not valid_username:
-        error_code = errors.LOGIN_INVALID_CODE
-        return jsonify(errors.create_single_error_response(error_code).to_response_dict())
-
+        return _error_response(errors.LOGIN_INVALID_CODE, 422)
     else:
         access_token = create_access_token(identity=user.Email)
-        #return jsonify(_create_success_response(access_token))
-        return jsonify(_create)
+        return _success_response(access_token)
+
 
 '''
 ===================================================================================
-=y===============================REGISTER USER======================================
+================================REGISTER USER======================================
 ===================================================================================
 '''
+
 
 def register_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     error_list = None
 
     if request is None:
-        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(errors.REQUEST_INVALID_CODE, 400)
 
     user, error_codes = _parse_and_validate_login(request, True)
     if error_codes is not None:
-        error_list = errors.create_multiple_error_response(error_codes)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(error_codes, 400)
 
     error_code = db_int.save_login(user)
     if error_code is not None:
@@ -73,51 +60,14 @@ def register_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
             return jsonify(error_list.to_response_dict()), 200
 
         return jsonify(error_list.to_response_dict()), 500
-
-    success_response = _create_success_response()
-    return jsonify(success_response), 200
+    return _success_response()
 
 
-def _parse_and_validate_login(request: Dict[str, Any], is_register: bool) -> Tuple[User, List[str]]:
-    error_codes = []
 
-    email = request.get('email')
-    password = request.get('password')
-
-    email_valid = _validate_email(email)
-    password_valid = _validate_password(password)
-
-    if not email_valid:
-        error_codes.append(errors.EMAIL_INVALID_CODE)
-
-    if not password_valid:
-        error_codes.append(errors.PASSWORD_INVALID_CODE)
-
-    if is_register:
-        first_name = request.get('first_name')
-        last_name = request.get('last_name')
-        phone_number = request.get('phone_number')
-
-        name_valid = _validate_name(first_name, last_name)
-        phone_number_valid = _validate_phone_number(phone_number)
-
-        if not name_valid:
-            error_codes.append(errors.NAME_INVALID_CODE)
-
-        if not phone_number_valid:
-            error_codes.append(errors.PHONE_NUMBER_INVALID_CODE)
-
-
-    if len(error_codes) > 0:
-        return None, errors.create_multiple_error_response(error_codes)
-
-    user = _create_user(email, password, last_name, phone_number, first_name)
-    return user, None
-
-
-def _create_user(email: str, password: str, last_name: str, phone_number: str, first_name: str=None) -> User:
+def _create_user(email: str, password: str, last_name: str, phone_number: str, first_name: str = None) -> User:
     hashed_pass = hash_password(password)
-    return User(Email=email, PasswordHash=hashed_pass, FirstName=first_name, LastName=last_name, PhoneNumber=phone_number)
+    return User(Email=email, PasswordHash=hashed_pass, FirstName=first_name,
+                LastName=last_name, PhoneNumber=phone_number)
 
 
 def _phone_number_regex(phone_number: str) -> bool:
@@ -145,6 +95,7 @@ def _clean_phone_number(phone_number: str):
                                  'backend.api.api', '_clean_phone_number')
         return ""
 
+
 '''
 ===================================================================================
 ==============================ORGANIZATION REQUEST=================================
@@ -156,13 +107,11 @@ def submit_organization_request(request: Dict[str, Any]) -> Tuple[Dict[str, Any]
     error_list = None
 
     if request is None:
-        error_list = errors.create_single_error_response(errors.REQUEST_INVALID_CODE)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(errors.REQUEST_INVALID_CODE, 400)
 
     org_request, error_codes = _parse_and_validate_org_request(request)
     if error_codes is not None:
-        error_list = errors.create_multiple_error_response(error_codes)
-        return jsonify(error_list.to_response_dict()), 400
+        return _error_response(error_codes, 400)
 
     error_code = db_int.save_org_request(org_request)
 
@@ -173,15 +122,13 @@ def submit_organization_request(request: Dict[str, Any]) -> Tuple[Dict[str, Any]
         else:
             return jsonify(error_list.to_response_dict()), 500
 
-    success_response = _create_success_response()
-    return jsonify(success_response), 200
+    return _success_response()
 
 
 def _parse_and_validate_org_request(request: Dict[str, Any]) -> Tuple[OrganizationRegistrationRequest, List[int]]:
     error_codes = []
 
     # TODO: Manage User ID with JWT
-    user_email = request.get('explicit_user_email')
     org_name = request.get('organization_name')
     message = request.get('message')
     contact_phone_number = request.get('explicit_phone_number')
@@ -254,6 +201,7 @@ def _validate_org_name(org_name: str) -> bool:
 def _validate_org_url(org_url: str) -> bool:
     raise NotImplementedError()
 
+
 '''
 ===================================================================================
 ==================================SHARED===========================================
@@ -261,7 +209,7 @@ def _validate_org_url(org_url: str) -> bool:
 '''
 
 
-def _create_success_response(access_token: str=None) -> Dict[str, Any]:
+def _create_success_response(access_token: str = None) -> Dict[str, Any]:
     if access_token is not None:
         return {
             'success': True,
@@ -269,6 +217,17 @@ def _create_success_response(access_token: str=None) -> Dict[str, Any]:
         }
     else:
         return {'success': True}
+
+
+def _success_response(access_token: str = None, http_code: int = 200) -> Dict[str, Any]:
+    return jsonify(_create_success_response(access_token)), http_code
+
+
+def _error_response(error_codes: Union[int, List[int]], http_code: int) -> Dict[str, Any]:
+    if type(error_codes) == list:
+        return jsonify(errors.create_multiple_error_response(error_codes).to_response_dict()), http_code
+    else:
+        return jsonify(errors.create_single_error_response(error_codes).to_response_dict()), http_code
 
 
 def hash_password(password: str) -> None:
@@ -288,4 +247,40 @@ def _validate_phone_number(phone_number: str) -> bool:
     if _phone_number_regex(phone_number):
         return True
     return False
+
+
+def _parse_and_validate_login(request: Dict[str, Any], is_register: bool) -> Tuple[User, List[str]]:
+    error_codes = []
+
+    email = request.get('email')
+    password = request.get('password')
+
+    email_valid = _validate_email(email)
+    password_valid = _validate_password(password)
+
+    if not email_valid:
+        error_codes.append(errors.EMAIL_INVALID_CODE)
+
+    if not password_valid:
+        error_codes.append(errors.PASSWORD_INVALID_CODE)
+
+    if is_register:
+        first_name = request.get('first_name')
+        last_name = request.get('last_name')
+        phone_number = request.get('phone_number')
+
+        name_valid = _validate_name(first_name, last_name)
+        phone_number_valid = _validate_phone_number(phone_number)
+
+        if not name_valid: 
+            error_codes.append(errors.NAME_INVALID_CODE)
+
+        if not phone_number_valid:
+            error_codes.append(errors.PHONE_NUMBER_INVALID_CODE)
+
+    if len(error_codes) > 0:
+        return None, error_codes 
+
+    user = _create_user(email, password, last_name, phone_number, first_name)
+    return user, None
 

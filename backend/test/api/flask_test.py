@@ -1,13 +1,10 @@
 # From flask.pocoo.org/docs/1.0/testing/
-
-import os
 from app import app
 import unittest
 from backend.data_model.data_model import Database
 from backend.data_model.db_interface import set_database, session_scope, _user_already_exists
 import backend.api.errors as errors
 from backend.test.test_helper import get_valid_register_user_dict
-
 
 class FlaskTestCase(unittest.TestCase):
 
@@ -28,7 +25,7 @@ class FlaskTestCase(unittest.TestCase):
 
     def test__register_user__valid_input__user_created(self):
         test_dict = get_valid_register_user_dict()
-
+        breakpoint()
         ret = self.post_with_user_dict(test_dict)
         self.assertTrue(ret.json.get('success'))
         self.assertIsNone(ret.json.get('errors'))
@@ -64,7 +61,7 @@ class FlaskTestCase(unittest.TestCase):
         self.assertFalse(ret.json.get('success'))
 
         expected_error_codes = set([errors.NAME_INVALID_CODE, errors.PASSWORD_INVALID_CODE])
-        self.assertTrue(self.contains_only_error_codes(expected_error_codes))
+        self.assertTrue(self.contains_only_error_codes(ret.json, expected_error_codes))
 
         with session_scope() as session:
             self.assertFalse(_user_already_exists(test_dict['email'], session))
@@ -81,9 +78,10 @@ class FlaskTestCase(unittest.TestCase):
         self.assertIsNone(ret.json.get('errors'))
 
         with session_scope() as session:
-            self.assertAlmostEqualstTrue(_user_already_exists(test_dict['email']))
+            self.assertTrue(_user_already_exists(test_dict['email']))
 
     def post_with_user_dict(self, user_dict):
+        breakpoint()
         return self.app.post('/register-user', json=user_dict, follow_redirects=True)
 
     def merge_dicts(self, source, target):

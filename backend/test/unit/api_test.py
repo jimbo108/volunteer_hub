@@ -4,7 +4,11 @@ import flask
 from app import app
 import backend.api.api as api
 import backend.api.errors as errors
-from backend.data_model.data_model import User, OrganizationRegistrationRequest
+import backend.data_model.db_interface as db_interface
+from backend.data_model.data_model import (
+        User, OrganizationRegistrationRequest,
+        Database)
+from sqlalchemy.orm import sessionmaker
 from backend.test.api.flask_test import get_valid_register_user_dict
 
 
@@ -16,6 +20,9 @@ class TestApiRegisterUser(TestCase):
     m_[param] = mocked
 
     '''
+
+    TEST_DB = 'test'
+
     app_context = None
 
     mg__parse_and_validate_login__valid_user = None
@@ -42,15 +49,22 @@ class TestApiRegisterUser(TestCase):
         TestApiRegisterUser.app_context.pop()
 
     def setUp(self):
-        mg__parse_and_validate_login__valid_user = None
-        mg__parse_and_validate_login__codes = None
-        mg__save_login__successful_save = None
-        mg__save_login__code = None
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = None
+        TestApiRegisterUser.mg__parse_and_validate_login__codes = None
+        TestApiRegisterUser.mg__save_login__successful_save = None
+        TestApiRegisterUser.mg__save_login__code = None
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org = None
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__codes = None
+        TestApiRegisterUser.mg__save_org_request__successful_save = None
+        TestApiRegisterUser.mg__save_org_request__code = None
 
-        mg__parse_and_validate_organization_request__valid_org = None
-        mg__parse_and_validate_organization_request__codes = None
-        mg__save_org_request__successful_save = None
-        mg__save_org_request__code = None
+        Database.create_database(self.TEST_DB)
+        db_interface.Session = sessionmaker(bind=Database.Engine)
+
+    def tearDown(self):
+        Database.drop_all_test_database(self.TEST_DB)
+
+ 
 
     '''
     ===================================================================================
@@ -66,7 +80,7 @@ class TestApiRegisterUser(TestCase):
         m_parse_and_validate_login.side_effect = self.mock__parse_and_validate_login
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_login__valid_user = True
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = True
 
         resp, http_code = api.register_user(None)
 
@@ -84,8 +98,8 @@ class TestApiRegisterUser(TestCase):
         m_parse_and_validate_login.side_effect = self.mock__parse_and_validate_login
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_login__valid_user = False
-        self.mg__parse_and_validate_login__codes = [errors.PASSWORD_INVALID_CODE, errors.EMAIL_INVALID_CODE]
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = False
+        TestApiRegisterUser.mg__parse_and_validate_login__codes = [errors.PASSWORD_INVALID_CODE, errors.EMAIL_INVALID_CODE]
 
         resp, http_code = api.register_user({"not_none": 1})
 
@@ -104,9 +118,9 @@ class TestApiRegisterUser(TestCase):
         m_save_login.side_effect = self.mock__save_login
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_login__valid_user = True
-        self.mg__save_login__successful_save = False
-        self.mg__save_login__code = errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = True
+        TestApiRegisterUser.mg__save_login__successful_save = False
+        TestApiRegisterUser.mg__save_login__code = errors.USER_WITH_EMAIL_ALREADY_EXISTS_CODE
 
         resp, http_code = api.register_user({"not_none": 1})
 
@@ -125,9 +139,9 @@ class TestApiRegisterUser(TestCase):
         m_save_login.side_effect = self.mock__save_login
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_login__valid_user = True
-        self.mg__save_login__successful_save = False
-        self.mg__save_login__code = errors.FAILED_TO_COMMIT_USER_CODE
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = True
+        TestApiRegisterUser.mg__save_login__successful_save = False
+        TestApiRegisterUser.mg__save_login__code = errors.FAILED_TO_COMMIT_USER_CODE
 
         resp, http_code = api.register_user({"not_none": 1})
 
@@ -146,8 +160,8 @@ class TestApiRegisterUser(TestCase):
         m_save_login.side_effect = self.mock__save_login
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_login__valid_user = True
-        self.mg__save_login__successful_save = True
+        TestApiRegisterUser.mg__parse_and_validate_login__valid_user = True
+        TestApiRegisterUser.mg__save_login__successful_save = True
 
         resp, http_code = api.register_user({"not_none": 1})
 
@@ -168,9 +182,9 @@ class TestApiRegisterUser(TestCase):
         m_validate_name.return_value = True
         m_validate_phone_number.return_value = True
 
-        user_req = get_valid_register_user_dict() 
+        user_req = get_valid_register_user_dict()
 
-        user, errors = api._parse_and_validate_login(user_req)
+        user, errors = api._parse_and_validate_login(user_req, True)
 
         self.assertTrue(type(user) == User)
         self.assertIsNone(errors)
@@ -188,9 +202,9 @@ class TestApiRegisterUser(TestCase):
         m_validate_name.return_value = False
         m_validate_phone_number.return_value = False
 
-        user_req = get_valid_register_user_dict() 
+        user_req = get_valid_register_user_dict()
 
-        user, error_list = api._parse_and_validate_login(user_req)
+        user, error_list = api._parse_and_validate_login(user_req, True)
 
         self.assertIsNone(user)
         expected_codes = set([errors.EMAIL_INVALID_CODE,
@@ -215,8 +229,8 @@ class TestApiRegisterUser(TestCase):
         m_parse_and_validate_org_request.side_effect = self.mock__parse_and_validate_org_request
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__save_org_request__successful_save = True
-        self.mg__parse_and_validate_organization_request__valid_org = True
+        TestApiRegisterUser.mg__save_org_request__successful_save = True
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org = True
 
         resp, http_code = api.submit_organization_request(None)
 
@@ -234,8 +248,8 @@ class TestApiRegisterUser(TestCase):
         m_parse_and_validate_org_request.side_effect = self.mock__parse_and_validate_org_request
         m_jsonify.side_effect = self.mock__jsonify
 
-        self.mg__parse_and_validate_organization_request__valid_org = False
-        self.mg__parse_and_validate_organization_request__codes = [errors.PHONE_NUMBER_INVALID_CODE,
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org = False
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__codes = [errors.PHONE_NUMBER_INVALID_CODE,
                                                                    errors.EMAIL_INVALID_CODE]
 
         resp, http_code = api.submit_organization_request({"not_none": 1})
@@ -255,9 +269,9 @@ class TestApiRegisterUser(TestCase):
         m_jsonify.side_effect = self.mock__jsonify
         m_save_org_request.side_effect = self.mock__save_org_request
 
-        self.mg__parse_and_validate_organization_request__valid_org = True
-        self.mg__save_org_request__successful_save = False
-        self.mg__save_org_request__code = errors.FAILED_TO_COMMIT_ORG_REQUEST_CODE
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org = True
+        TestApiRegisterUser.mg__save_org_request__successful_save = False
+        TestApiRegisterUser.mg__save_org_request__code = errors.FAILED_TO_COMMIT_ORG_REQUEST_CODE
 
         resp, http_code = api.submit_organization_request({"not_none": 1})
 
@@ -276,8 +290,8 @@ class TestApiRegisterUser(TestCase):
         m_jsonify.side_effect = self.mock__jsonify
         m_save_org_request.side_effect = self.mock__save_org_request
 
-        self.mg__parse_and_validate_organization_request__valid_org = True
-        self.mg__save_org_request__successful_save = True
+        TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org = True
+        TestApiRegisterUser.mg__save_org_request__successful_save = True
 
         resp, http_code = api.submit_organization_request({"not_none": 1})
 
@@ -363,7 +377,8 @@ class TestApiRegisterUser(TestCase):
         found_codes_set = set([error.error_code for error in error_list.errors])
         symmetric_difference = found_codes_set.symmetric_difference(expected_codes_set)
         return len(symmetric_difference) == 0
-
+    
+    
     def contains_only_error_codes(self, json, expected_codes_set):
         errors = json.get('errors')
         if errors is None:
@@ -383,48 +398,48 @@ class TestApiRegisterUser(TestCase):
         return len(symmetric_difference) == 0
 
     def mock__save_login(self, user):
-        if self.mg__save_login__successful_save is None:
+        if TestApiRegisterUser.mg__save_login__successful_save is None:
             raise ValueError('mg__save_login__successful_save not set explicitly')
 
-        if self.mg__save_login__successful_save:
-            if self.mg__save_login__code is not None:
+        if TestApiRegisterUser.mg__save_login__successful_save:
+            if TestApiRegisterUser.mg__save_login__code is not None:
                 raise ValueError('mg__save_login__code is set while mg__save_login__successful_save is True')
             return None
         else:
-            if self.mg__save_login__code is None:
+            if TestApiRegisterUser.mg__save_login__code is None:
                 raise ValueError('mg__save_login__code is not set while mg__save_login__successful_save is False')
-            return self.mg__save_login__code
+            return TestApiRegisterUser.mg__save_login__code
 
     def mock__save_org_request(self, org_request):
-        if self.mg__save_org_request__successful_save is None:
+        if TestApiRegisterUser.mg__save_org_request__successful_save is None:
             raise ValueError('mg__save_org_request__successful_save not set explicitly')
 
-        if self.mg__save_org_request__successful_save:
-            if self.mg__save_org_request__code is not None:
+        if TestApiRegisterUser.mg__save_org_request__successful_save:
+            if TestApiRegisterUser.mg__save_org_request__code is not None:
                 raise ValueError('mg__save_org_request__code is set while mg__save_org_request__successful_save is True')
             return None
         else:
-            if self.mg__save_org_request__code is None:
+            if TestApiRegisterUser.mg__save_org_request__code is None:
                 raise ValueError('mg__save_org_request__code is not set while mg__save_org_request__successful_save is False')
-            return self.mg__save_org_request__code
+            return TestApiRegisterUser.mg__save_org_request__code
 
-    def mock__parse_and_validate_login(self, request):
-        if self.mg__parse_and_validate_login__valid_user is None:
+    def mock__parse_and_validate_login(self, request, is_register):
+        if TestApiRegisterUser.mg__parse_and_validate_login__valid_user is None:
             raise ValueError('mg__parse_and_validate_login__valid_user not set explicitly')
 
-        if self.mg__parse_and_validate_login__valid_user:
+        if TestApiRegisterUser.mg__parse_and_validate_login__valid_user:
             user = User(Email='test@test.com', PasswordHash='asdf',
                         FirstName='first', LastName='last',
                         PhoneNumber='111-111-1111')
             return user, None
         else:
-            return None, self.mg__parse_and_validate_login__codes
+            return None, TestApiRegisterUser.mg__parse_and_validate_login__codes
 
     def mock__parse_and_validate_org_request(self, request):
-        if self.mg__parse_and_validate_organization_request__valid_org is None:
+        if TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org is None:
             raise ValueError('mg__parse_and_validate_org_request__valid_org not set explicitly') 
 
-        if self.mg__parse_and_validate_organization_request__valid_org:
+        if TestApiRegisterUser.mg__parse_and_validate_organization_request__valid_org:
             org_request = OrganizationRegistrationRequest(SubmittingUserId=1,
                                                           OrganizationName="Test Org",
                                                           Message="Please",
@@ -433,7 +448,7 @@ class TestApiRegisterUser(TestCase):
                                                           OrganizationURL='test.com')
             return org_request, None
         else:
-            return None, self.mg__parse_and_validate_organization_request__codes
+            return None, TestApiRegisterUser.mg__parse_and_validate_organization_request__codes
 
     def mock__jsonify(self, dic):
         return dic
