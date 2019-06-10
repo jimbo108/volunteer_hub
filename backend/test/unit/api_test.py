@@ -212,7 +212,7 @@ class TestApiRegisterUser(TestCase):
                               errors.NAME_INVALID_CODE,
                               errors.PHONE_NUMBER_INVALID_CODE])
 
-        self.assertTrue(self.error_list_contains_only_error_codes(error_list, expected_codes))
+        self.assertTrue(self.list_contains_only_error_codes(error_list, expected_codes))
 
     #  TODO: Test validation functions
     '''
@@ -377,7 +377,11 @@ class TestApiRegisterUser(TestCase):
         found_codes_set = set([error.error_code for error in error_list.errors])
         symmetric_difference = found_codes_set.symmetric_difference(expected_codes_set)
         return len(symmetric_difference) == 0
-    
+
+    def list_contains_only_error_codes(self, error_list, expected_codes_set):
+        found_codes_set = set(error_list)
+        symmetric_difference = found_codes_set.symmetric_difference(expected_codes_set)
+        return len(symmetric_difference) == 0 
     
     def contains_only_error_codes(self, json, expected_codes_set):
         errors = json.get('errors')

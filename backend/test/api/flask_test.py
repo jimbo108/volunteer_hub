@@ -6,6 +6,7 @@ from backend.data_model.db_interface import set_database, session_scope, _user_a
 import backend.api.errors as errors
 from backend.test.test_helper import get_valid_register_user_dict
 
+
 class FlaskTestCase(unittest.TestCase):
 
     TEST_DB = 'test'
@@ -25,7 +26,6 @@ class FlaskTestCase(unittest.TestCase):
 
     def test__register_user__valid_input__user_created(self):
         test_dict = get_valid_register_user_dict()
-        breakpoint()
         ret = self.post_with_user_dict(test_dict)
         self.assertTrue(ret.json.get('success'))
         self.assertIsNone(ret.json.get('errors'))
@@ -78,10 +78,9 @@ class FlaskTestCase(unittest.TestCase):
         self.assertIsNone(ret.json.get('errors'))
 
         with session_scope() as session:
-            self.assertTrue(_user_already_exists(test_dict['email']))
+            self.assertTrue(_user_already_exists(test_dict['email'], session))
 
     def post_with_user_dict(self, user_dict):
-        breakpoint()
         return self.app.post('/register-user', json=user_dict, follow_redirects=True)
 
     def merge_dicts(self, source, target):
@@ -107,7 +106,6 @@ class FlaskTestCase(unittest.TestCase):
         symmetric_difference = found_codes_set.symmetric_difference(expected_codes_set)
         return len(symmetric_difference) == 0
 
+
 if __name__ == '__main__':
     unittest.main()
-
-

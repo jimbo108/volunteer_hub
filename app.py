@@ -2,7 +2,6 @@ from random import randint
 import logging
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
-import backend.data_model.db_interface as db_int
 import backend.api.api as api
 import backend.api.secrets as secrets
 

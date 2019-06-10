@@ -16,11 +16,17 @@ def session_scope():
     try:
         yield session
         session.commit()
-    except:
+    except BaseException:
         session.rollback()
         raise
     finally:
         session.close()
+
+
+def reinit_session():
+    global Session
+    Session = sessionmaker(bind=Database.Engine)
+
 
 '''
 ===================================================================================
@@ -151,4 +157,5 @@ def _org_exists(organization_name: str, session: Session) -> bool:
 
 
 def set_database(engine: Any) -> None:
-    Session = sessionmaker(bind=engine)
+    Database.Engine = engine
+    reinit_session()
