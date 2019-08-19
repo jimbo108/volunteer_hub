@@ -15,6 +15,7 @@ from backend.data_model.data_model import User, OrganizationRegistrationRequest
 ===================================================================================
 '''
 
+
 def login_user(request: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
     if request is None:
         return _error_response(errors.REQUEST_INVALID_CODE, 400)

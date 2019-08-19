@@ -1,3 +1,7 @@
+import sys
+import os
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path)
 from random import randint
 import logging
 from flask import Flask, render_template, jsonify, request

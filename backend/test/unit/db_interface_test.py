@@ -2,7 +2,7 @@ import unittest
 import backend.data_model.db_interface as db_interface
 from backend.data_model.data_model import Database, User
 from sqlalchemy.orm import sessionmaker
-
+from backend.api.api import _create_user
 
 class TestDBInterfaceRegister(unittest.TestCase):
 
@@ -29,15 +29,20 @@ class TestDBInterfaceRegister(unittest.TestCase):
 
     def test__save_login__insert_user__user_exists(self):
         email = "testemail@email.com"
-        hashed_pass = 'hash'
-        db_interface.save_login(email, hashed_pass)
+        password = 'hash'
+        last_name = "last"
+        first_name = "first"
+        phone_number = "6086086008"
+
+        user = _create_user(email, password, last_name, phone_number, first_name)
+    
+        db_interface.save_login(user)
 
         users = self._get_users_with_email(email)
         self.assertEqual(len(users), 1)
 
     def test__user_already_exists__no_user__return_false(self):
         email = "testemail@email.com"
-        hashed_pass = 'hash'
         exists = None
 
         with db_interface.session_scope() as session:
@@ -47,11 +52,16 @@ class TestDBInterfaceRegister(unittest.TestCase):
     
     def test__user_already_exists__multiple_users__return_true(self):
         email = "testemail@email.com"
-        hashed_pass = 'hash'
-        exists = None
+        password = 'hash'
+        last_name = "last"
+        first_name = "first"
+        phone_number = "6086086008"
 
-        db_interface.save_login(email, hashed_pass)
-        db_interface.save_login(email, hashed_pass)
+        user = _create_user(email, password, last_name, phone_number, first_name)
+        db_interface.save_login(user)
+
+        user = _create_user(email, password, last_name, phone_number, first_name) 
+        db_interface.save_login(user)
 
         with db_interface.session_scope() as session:
             exists = db_interface._user_already_exists(email, session)
