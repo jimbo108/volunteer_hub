@@ -1,7 +1,7 @@
 Grab bag TODOs:
-(1) Change DB to postgresql from sqlite
 (2) Add support for JWT in register user / for the rest of everything
 (3) login backend / frontend
+(1) Change DB to postgresql from sqlite
 (4) Finish register org frontend
 (5) Actual transaction workflows
 (6) Point assignment
